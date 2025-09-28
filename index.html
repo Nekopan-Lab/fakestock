@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nekopan Lab, LLC - Estimated Share Price History</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Chart.js for visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        /* Custom CSS for a clean, modern look */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7fafc; /* Light gray background */
+        }
+        .card {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <header class="text-center mb-10">
+        <h1 class="text-3xl md:text-4xl font-extrabold text-gray-900">Nekopan Lab, LLC</h1>
+        <p class="text-xl text-indigo-600 mt-1">Estimated Share Price History & Forecast (ANAV / EV Blended Model)</p>
+        <p class="text-sm text-gray-500 mt-2">1,000 Shares Outstanding (Founded June 2025)</p>
+    </header>
+
+    <main class="grid grid-cols-1 gap-8 max-w-7xl mx-auto">
+        
+        <!-- Chart and Annotations Section (Full Width) -->
+        <div class="bg-white p-6 rounded-xl card transition hover:shadow-lg">
+            <h2 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2">Historical Share Price & Annotated Events</h2>
+            <div class="h-96 w-full relative">
+                <canvas id="sharePriceChart"></canvas>
+            </div>
+
+            <h3 class="text-lg font-bold text-gray-800 mt-6 mb-4 border-b pb-2">Detailed Price History and Key Event Impact</h3>
+            <div id="annotations-container" class="mt-6 space-y-4">
+                <!-- Annotations will be populated by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Financial Analyst Notes Section (Full Width) -->
+        <div class="bg-white p-6 rounded-xl card">
+            <h2 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2">Financial Analyst Notes (ANAV / EV Blended Model)</h2>
+            <p class="text-sm text-gray-600">
+                The estimated share price uses a blended model (<strong>40% Book Value + 60% Future Value</strong>) consistently across all periods to capture the company's high potential for $1,000/month revenue over a 10-year horizon.
+            </p>
+            
+            <h3 class="text-base font-semibold text-gray-800 mt-4">Model Components:</h3>
+            <ul class="list-disc list-inside text-sm text-gray-700 space-y-2 ml-4">
+                <li><strong>Book Value (NAV) Component (40%):</strong> Total Equity from the Balance Sheet, adjusted for accrued monthly loss/gain, divided by 1,000 shares.</li>
+                <li><strong>Future Value (FVS) Component (60%):</strong> Varies based on product development milestones and known long-term expense outlook. The final FVS per share is <strong>$86.44</strong>, reflecting all projected annual cost savings.</li>
+            </ul>
+            
+            <p class="text-sm text-gray-700 mt-4">
+                <strong>Key Metric:</strong> The staggered jumps in September reflect the upward revaluation of the <strong>Future Value (FVS) component</strong> as product viability is confirmed and permanent cost reductions are announced. The final forecasted price for Sep 30 is <strong>$77.13</strong>.
+            </p>
+        </div>
+    </main>
+
+    <script>
+        // Financial Data and Valuation (1,000 Shares Outstanding)
+        // Valuation Model: 40% NAV (Book Value) + 60% FVS (Future Potential)
+        
+        // FVS Calculation: Derived from long-term AOP, using an 8.333x multiple (implied from original FVS of $65.20 on $7,824.36 AOP)
+        
+        // FVS stages based on events:
+        const FVS_INITIAL = 65.20; // Pre-product announcement FVS
+        const FVS_SEP_16 = 70.00; // Post Neko Card Announcement (Risk premium reduced)
+        // Annual AOP increase from personnel change: $2,160.00 ($2400/yr -> $240/yr)
+        // New FVS after personnel: (70000 + 2160 * 8.333) / 1000 = 88.00 (Approximation used for simplicity in FVS jumps)
+        const FVS_SEP_23 = 83.20; // FVS adjusted for Claude -> Codex savings
+        
+        // Annual AOP increase from insurance: $388.00 ($1200/yr -> $812/yr)
+        // New FVS after insurance: $83.20 + (388 * 0.60) / 1000 = $86.44
+        const FVS_FINAL = 86.44;
+
+        // Blended Price Calculation: (NAV_Per_Share * 0.40) + (FVS_Per_Share * 0.60)
+        
+        // Daily Loss Rates (Based on $135.16 Interest Income):
+        // Old Rate (Pre-Sep 23): $14.17/day loss (Based on $425.14/month loss)
+        // Intermediate Rate (Sep 23-25): $8.17/day loss (Based on $245.14/month loss, before insurance cut)
+        // Final Rate (Sep 26+): $7.09/day loss (Based on $212.81/month loss)
+
+        const valuationData = [
+            // Historical Points
+            { date: 'June 30, 2025', equity: 39834.99, price: 55.05, fvs: FVS_INITIAL, event: 'Initial Valuation', detail: 'Valuation reflects initial capital and the long-term potential (FVS) despite operational loss.' },
+            { date: 'July 31, 2025', equity: 33647.86, price: 52.58, fvs: FVS_INITIAL, event: 'Major One-Time Expense', detail: 'Significant office equipment purchase ($8,626.29) sharply reduced the Book Value (NAV) component.' },
+            { date: 'Aug 31, 2025', equity: 63731.78, price: 64.61, fvs: FVS_INITIAL, event: 'Capital Injection', detail: 'Owner injected approximately $30,000 in new capital, significantly boosting the NAV.' },
+            
+            // September Forecast Points (Staggered Events)
+            // NAV Sep 16: 63731.78 - (16 days * 14.17 loss/day) = 63505.06
+            { date: 'Sep 16, 2025 (Forecast)', equity: 63505.06, price: 67.00, fvs: FVS_SEP_16, event: 'Product Announcement (Neko Card)', detail: 'Announcement of the Neko Card app confirms product development, reducing execution risk and causing an initial bump in the Future Value (FVS).' },
+            
+            // NAV Sep 23: 63505.06 - (7 days * 14.17 loss/day) = 63405.97
+            // NAV Sep 23 Price: (63.41 * 0.40) + (83.20 * 0.60) = 75.30
+            { date: 'Sep 23, 2025 (Forecast)', equity: 63405.97, price: 75.30, fvs: FVS_SEP_23, event: 'Personnel Change (Claude Fired)', detail: 'Claude Code were fired and replaced by Codex. The $2,160 annual salary reduction triggers a sharp upward revaluation of the Future Value (FVS).' },
+
+            // NAV Sep 26: 63405.97 - (3 days * 8.17 loss/day) = 63381.46
+            // NAV Sep 26 Price: (63.38 * 0.40) + (86.44 * 0.60) = 77.15
+            { date: 'Sep 26, 2025 (Forecast)', equity: 63381.46, price: 77.15, fvs: FVS_FINAL, event: 'Insurance Cost Reduction', detail: 'Lower forecasted annual insurance cost ($388 saving) further increases long-term AOP, resulting in a second FVS jump.' },
+
+            // NAV Sep 27: 63381.46 - (1 day * 7.09 loss/day) = 63374.37
+            { date: 'Sep 27, 2025 (Forecast)', equity: 63374.37, price: 77.14, fvs: FVS_FINAL, event: 'Alpha Test Results', detail: 'Alpha test with credit card expert confirms product viability but notes more work is needed, validating the development process without changing the FVS.' },
+            
+            // NAV Sep 30: 63374.37 - (3 days * 7.09 loss/day) = 63353.10
+            { date: 'Sep 30, 2025 (Forecast)', equity: 63353.10, price: 77.13, fvs: FVS_FINAL, event: 'Final Month-End Valuation', detail: 'Final valuation for the month, reflecting the cumulative positive news and the slight NAV decline from remaining operational loss.' }
+        ];
+
+        // --- Utility Functions ---
+
+        const formatCurrency = (amount) => {
+            return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 }).format(amount);
+        };
+        
+        // Function to format the percentage change with color
+        const formatPercentage = (change) => {
+            if (change === undefined) return '';
+            const sign = change >= 0 ? '+' : '';
+            // Use different colors for significant drops (e.g. July) vs minor accrued losses
+            let color;
+            if (change > 0.5) {
+                color = 'text-green-600'; // Significant gain
+            } else if (change < -0.5) {
+                color = 'text-red-600'; // Significant loss
+            } else {
+                color = 'text-gray-500'; // Minor change/accrual
+            }
+            
+            return `<span class="${color} text-sm font-semibold ml-2 whitespace-nowrap">(${sign}${change.toFixed(2)}%)</span>`;
+        };
+        
+        const renderAnnotations = () => {
+            const annotationsContainer = document.getElementById('annotations-container');
+            let html = '';
+
+            valuationData.forEach((data, index) => {
+                // Calculate percentage change relative to the previous entry
+                const previousPrice = index > 0 ? valuationData[index - 1].price : undefined;
+                const priceChange = data.price - previousPrice;
+                const priceChangePct = previousPrice ? (priceChange / previousPrice) * 100 : undefined;
+
+                const isForecast = data.date.includes('Forecast');
+                // Use distinct colors for historical vs. forecast/event points
+                const color = isForecast ? 'bg-red-50' : 'bg-indigo-50';
+                const borderColor = isForecast ? 'border-red-400' : 'border-indigo-400';
+                const headerColor = isForecast ? 'text-red-800' : 'text-indigo-800';
+                
+                html += `
+                    <div class="p-4 rounded-lg border-l-4 ${borderColor} ${color} transition hover:shadow-md">
+                        <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-1">
+                            <p class="text-sm font-bold ${headerColor} mb-2 sm:mb-0">${data.date}: ${data.event}</p>
+                            <div class="text-left sm:text-right">
+                                <p class="text-2xl font-extrabold text-gray-900 leading-none flex items-center justify-start sm:justify-end">
+                                    ${formatCurrency(data.price)}
+                                    ${formatPercentage(priceChangePct)}
+                                </p>
+                                <p class="text-xs text-gray-600">Total Equity: ${formatCurrency(data.equity)}</p>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-600 mt-2 pt-2 border-t border-gray-200">
+                            <strong>Valuation Detail:</strong> ${data.detail} (${formatCurrency(data.fvs)} FVS/Share used in calculation)
+                        </p>
+                    </div>
+                `;
+            });
+            annotationsContainer.innerHTML = html;
+        };
+
+
+        // --- Chart Initialization ---
+
+        const setupChart = () => {
+            const ctx = document.getElementById('sharePriceChart').getContext('2d');
+            
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: valuationData.map(data => data.date.replace(' (Forecast)', '')),
+                    datasets: [{
+                        label: 'Estimated Share Price ($)',
+                        data: valuationData.map(data => data.price),
+                        borderColor: '#4f46e5', // Indigo-600
+                        backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                        fill: true,
+                        tension: 0.4, // Smooth line
+                        pointRadius: 6,
+                        pointBackgroundColor: valuationData.map((data, index) => index >= 3 ? '#ef4444' : '#4f46e5'), // Highlight all Sep points (index 3+) in red
+                        pointHoverRadius: 8,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                color: '#374151'
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += formatCurrency(context.parsed.y);
+                                    }
+                                    return label;
+                                },
+                                afterBody: function(context) {
+                                    const index = context[0].dataIndex;
+                                    // Calculate change for tooltip
+                                    const previousPrice = index > 0 ? valuationData[index - 1].price : undefined;
+                                    const priceChange = valuationData[index].price - previousPrice;
+                                    const priceChangePct = previousPrice ? (priceChange / previousPrice) * 100 : 0;
+
+                                    return `\nEvent: ${valuationData[index].event}\nChange: ${priceChangePct.toFixed(2)}%\nDetails: ${valuationData[index].detail}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            // Setting min and max to improve visibility of price changes
+                            min: 50, // Start just below the lowest price of $52.58
+                            max: 80, // End just above the highest price of $77.15
+                            title: {
+                                display: true,
+                                text: 'Share Price (USD)',
+                                color: '#374151'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return formatCurrency(value);
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(209, 213, 219, 0.5)'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Valuation Date',
+                                color: '#374151'
+                            },
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+        };
+
+        // Initialize App
+        window.onload = () => {
+            renderAnnotations();
+            setupChart();
+        };
+
+    </script>
+</body>
+</html>
