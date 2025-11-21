@@ -59,11 +59,11 @@
             <h3 class="text-base font-semibold text-gray-800 mt-4">Model Components:</h3>
             <ul class="list-disc list-inside text-sm text-gray-700 space-y-2 ml-4">
                 <li><strong>Book Value (NAV) Component (40%):</strong> Total Equity from the Balance Sheet, adjusted for accrued monthly loss/gain, divided by 1,000 shares.</li>
-                <li><strong>Future Value (FVS) Component (60%):</strong> Varies based on product development milestones and known long-term expense outlook. The final FVS per share is <strong>$86.44</strong>, reflecting all projected annual cost savings.</li>
+                <li><strong>Future Value (FVS) Component (60%):</strong> Varies based on product development milestones and known long-term expense outlook. FVS increased from <strong>$86.44</strong> (post-cost reduction) to <strong>$95.00</strong> (post-launch) following Neko Card's exceptional App Store performance.</li>
             </ul>
             
             <p class="text-sm text-gray-700 mt-4">
-                <strong>Key Metric:</strong> The staggered jumps in September reflect the upward revaluation of the <strong>Future Value (FVS) component</strong> as product viability is confirmed and permanent cost reductions are announced. The final forecasted price for Sep 30 is <strong>$77.13</strong>.
+                <strong>Key Metric:</strong> The staggered jumps in September reflect the upward revaluation of the <strong>Future Value (FVS) component</strong> as product viability is confirmed and permanent cost reductions are announced. The November 19 milestone demonstrates exceptional product traction, with the share price reaching <strong>$82.20</strong> (+6.6% from Sep 30) as the Neko Card app significantly exceeded install estimates and generated early revenue.
             </p>
         </div>
     </main>
@@ -84,6 +84,11 @@
         // Annual AOP increase from insurance: $388.00 ($1200/yr -> $812/yr)
         // New FVS after insurance: $83.20 + (388 * 0.60) / 1000 = $86.44
         const FVS_FINAL = 86.44;
+
+        // Nov 19: Neko Card launch shows exceptional traction - 500 installs vs. 100 estimated by end of year
+        // 15 trial users in 2 days, #39 ranking in Taiwan Finance, early revenue generation
+        // This validates product-market fit and significantly increases FVS
+        const FVS_NOV_19 = 95.00;
 
         // Blended Price Calculation: (NAV_Per_Share * 0.40) + (FVS_Per_Share * 0.60)
         
@@ -114,7 +119,10 @@
             { date: 'Sep 27, 2025 (Forecast)', equity: 63374.37, price: 77.14, fvs: FVS_FINAL, event: 'Alpha Test Results', detail: 'Alpha test with credit card expert confirms product viability but notes more work is needed, validating the development process without changing the FVS.' },
             
             // NAV Sep 30: 63374.37 - (3 days * 7.09 loss/day) = 63353.10
-            { date: 'Sep 30, 2025 (Forecast)', equity: 63353.10, price: 77.13, fvs: FVS_FINAL, event: 'Final Month-End Valuation', detail: 'Final valuation for the month, reflecting the cumulative positive news and the slight NAV decline from remaining operational loss.' }
+            { date: 'Sep 30, 2025 (Forecast)', equity: 63353.10, price: 77.13, fvs: FVS_FINAL, event: 'Final Month-End Valuation', detail: 'Final valuation for the month, reflecting the cumulative positive news and the slight NAV decline from remaining operational loss.' },
+
+            // NAV Nov 19: 63353.10 - (50 days * 7.09 loss/day) = 62998.60
+            { date: 'Nov 19, 2024', equity: 62998.60, price: 82.20, fvs: FVS_NOV_19, event: 'Neko Card App Store Launch - Exceptional Traction', detail: 'Neko Card released to App Store achieving 500 installs within 2 days (far exceeding founder\'s ~100 install estimate for all of 2025). 15 users entered 7-day trial, app ranked #39 in Taiwan Finance category. Subscription pricing at $4.99 USD / 70 NTD with roughly 50/50 split between currencies. Early revenue generation and product-market fit validation trigger major FVS increase.' }
         ];
 
         // --- Utility Functions ---
@@ -151,10 +159,23 @@
                 const priceChangePct = previousPrice ? (priceChange / previousPrice) * 100 : undefined;
 
                 const isForecast = data.date.includes('Forecast');
+                const isNov19 = data.date.includes('Nov 19');
                 // Use distinct colors for historical vs. forecast/event points
-                const color = isForecast ? 'bg-red-50' : 'bg-indigo-50';
-                const borderColor = isForecast ? 'border-red-400' : 'border-indigo-400';
-                const headerColor = isForecast ? 'text-red-800' : 'text-indigo-800';
+                let color, borderColor, headerColor;
+                if (isNov19) {
+                    // Special green styling for Nov 19 milestone
+                    color = 'bg-green-50';
+                    borderColor = 'border-green-400';
+                    headerColor = 'text-green-800';
+                } else if (isForecast) {
+                    color = 'bg-red-50';
+                    borderColor = 'border-red-400';
+                    headerColor = 'text-red-800';
+                } else {
+                    color = 'bg-indigo-50';
+                    borderColor = 'border-indigo-400';
+                    headerColor = 'text-indigo-800';
+                }
                 
                 html += `
                     <div class="p-4 rounded-lg border-l-4 ${borderColor} ${color} transition hover:shadow-md">
@@ -195,7 +216,11 @@
                         fill: true,
                         tension: 0.4, // Smooth line
                         pointRadius: 6,
-                        pointBackgroundColor: valuationData.map((data, index) => index >= 3 ? '#ef4444' : '#4f46e5'), // Highlight all Sep points (index 3+) in red
+                        pointBackgroundColor: valuationData.map((data, index) => {
+                            if (index === 8) return '#10b981'; // Green for Nov 19 milestone
+                            if (index >= 3 && index <= 7) return '#ef4444'; // Red for Sep forecast points
+                            return '#4f46e5'; // Indigo for historical points
+                        }),
                         pointHoverRadius: 8,
                     }]
                 },
@@ -238,7 +263,7 @@
                         y: {
                             // Setting min and max to improve visibility of price changes
                             min: 50, // Start just below the lowest price of $52.58
-                            max: 80, // End just above the highest price of $77.15
+                            max: 85, // End just above the highest price of $82.20
                             title: {
                                 display: true,
                                 text: 'Share Price (USD)',
